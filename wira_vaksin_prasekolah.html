@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Kuiz Wira Vaksin - Prasekolah</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Google Fonts -->
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+
+    body {
+      font-family: 'Fredoka', cursive, sans-serif;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #fce7f3 100%);
+    }
+
+    .bounce-in {
+      animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes bounceIn {
+      0% { transform: scale(0.7); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .shake-error {
+      animation: shake 0.4s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
+    }
+
+    .card-option {
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-option:active {
+      transform: scale(0.95);
+    }
+
+    .pulse-glow {
+      animation: pulseGlow 1.8s infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4); }
+      50% { transform: scale(1.03); box-shadow: 0 15px 30px -5px rgba(16, 185, 129, 0.7); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-amber-200">
+
+  <!-- HEADER BAR -->
+  <header class="bg-gradient-to-r from-sky-400 via-amber-300 to-rose-400 p-3 sm:p-4 shadow-xl border-b-4 border-white sticky top-0 z-30">
+    <div class="max-w-md mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-2">
+        <div class="bg-white p-2 rounded-2xl shadow-md text-2xl sm:text-3xl">
+          🦸‍♂️
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-slate-800 leading-none drop-shadow-sm">WIRA VAKSIN</h1>
+          <p class="text-[11px] sm:text-xs text-slate-800 font-semibold mt-0.5">Kuiz Interaktif Prasekolah 🌟</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="audioToggleBtn" onclick="toggleAudio()" class="bg-white p-2.5 rounded-2xl shadow-md hover:bg-slate-50 active:scale-95 transition text-emerald-600 text-lg sm:text-xl">
+          <i id="audioIcon" class="fa-solid fa-volume-high"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APPLICATION CONTAINER -->
+  <main class="max-w-md mx-auto w-full p-3 sm:p-4 flex-1 flex flex-col justify-center">
+
+    <!-- SCREEN 1: REGISTRATION -->
+    <section id="screenName" class="bg-white/95 backdrop-blur rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-amber-300 text-center w-full my-auto bounce-in">
+      <div class="text-7xl mb-3 animate-bounce">💉</div>
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-1">TULIS NAMA ADIK</h2>
+      <p class="text-slate-500 text-xs sm:text-sm mb-5 font-bold">Mari belajar tentang Vaksin & Virus!</p>
+
+      <form onsubmit="event.preventDefault(); startQuiz();" class="space-y-4">
+        <div>
+          <input type="text" id="playerNameInput" placeholder="NAMA ADIK..." required autocomplete="off"
+            class="w-full text-center text-xl sm:text-2xl font-bold py-3.5 px-4 rounded-2xl border-4 border-sky-300 focus:border-amber-400 focus:ring-4 focus:ring-amber-100 outline-none transition bg-sky-50 uppercase text-slate-700 shadow-inner" />
+        </div>
+
+        <button type="submit" class="pulse-glow w-full bg-emerald-400 hover:bg-emerald-500 text-white text-xl sm:text-2xl font-bold py-3.5 rounded-2xl shadow-lg transition active:scale-95 border-b-4 border-emerald-600 flex items-center justify-center gap-2">
+          <span>MULA KUIZ</span>
+          <span>▶️</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- SCREEN 2: QUIZ PRESENTATION (ONE BY ONE) -->
+    <section id="screenQuiz" class="hidden flex-1 flex flex-col justify-between">
+      
+      <!-- Top Info Bar -->
+      <div class="bg-white/90 rounded-2xl p-2.5 shadow-md border-2 border-amber-300 mb-2 flex justify-between items-center">
+        <div class="flex items-center gap-1.5">
+          <span class="bg-amber-100 text-amber-900 font-bold px-3 py-1 rounded-xl text-xs flex items-center gap-1">
+            <span>🧒</span>
+            <span id="displayName">MURID</span>
+          </span>
+        </div>
+        <div class="flex items-center gap-2 text-xs font-bold">
+          <div class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-xl flex items-center gap-1">
+            <span>⭐</span>
+            <span id="scoreText">0 / 10</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question Card Container -->
+      <div class="bg-white/95 rounded-3xl p-4 sm:p-5 shadow-xl border-4 border-sky-300 flex-1 flex flex-col justify-between my-auto bounce-in">
+        
+        <!-- Question Progress & Audio Trigger -->
+        <div>
+          <div class="flex justify-between items-center mb-2">
+            <span id="questionNumBadge" class="bg-sky-500 text-white px-3 py-0.5 rounded-full text-xs font-extrabold uppercase">
+              SOALAN 1 / 10
+            </span>
+            
+            <button onclick="speakCurrentQuestion()" class="bg-amber-400 hover:bg-amber-500 text-amber-950 px-3 py-1 rounded-xl text-xs font-bold shadow transition flex items-center gap-1 active:scale-95">
+              <span>🔊</span>
+              <span>Dengar Soalan</span>
+            </button>
+          </div>
+
+          <!-- Question Title -->
+          <h3 id="questionText" class="text-lg sm:text-xl font-extrabold text-slate-800 text-center my-2 leading-snug">
+            Apakah soalan?
+          </h3>
+        </div>
+
+        <!-- TWO LARGE VISUAL OPTION CARDS -->
+        <div class="grid grid-cols-1 gap-3 my-3" id="optionsContainer">
+          <!-- Dynamically inserted Options -->
+        </div>
+
+        <!-- Audio Auto Indicator -->
+        <div class="text-center text-[11px] font-bold text-slate-400 flex items-center justify-center gap-1">
+          <span>💡</span>
+          <span>Sentuh kad gambar untuk memilih jawapan!</span>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- SCREEN 3: RESULT & LEADERBOARD -->
+    <section id="screenResult" class="hidden bg-white/95 backdrop-blur rounded-3xl p-5 sm:p-6 shadow-2xl border-4 border-emerald-300 w-full my-auto text-center bounce-in">
+      <div class="text-6xl mb-2 animate-bounce">🏆</div>
+
+      <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800">TAHNIAH WIRA!</h2>
+      <p class="text-slate-500 text-xs sm:text-sm mb-3 font-bold">Adik telah tamat menjawab 10 soalan!</p>
+
+      <!-- Score Banner -->
+      <div class="bg-emerald-50 border-2 border-emerald-200 rounded-2xl p-3 mb-4 flex justify-around items-center">
+        <div>
+          <p class="text-[10px] text-slate-400 uppercase font-bold">Markah Adik</p>
+          <p id="finalScore" class="text-3xl font-extrabold text-emerald-600">10 / 10</p>
+        </div>
+        <div class="border-r border-emerald-200 h-10"></div>
+        <div>
+          <p class="text-[10px] text-slate-400 uppercase font-bold">Status Kebal</p>
+          <p id="statusBadge" class="text-base font-bold text-emerald-600">Wira Kebal 🛡️</p>
+        </div>
+      </div>
+
+      <!-- Leaderboard Container -->
+      <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-3 mb-4 text-left">
+        <h3 class="text-xs font-bold text-amber-900 uppercase mb-2 flex items-center justify-between">
+          <span>🥇 PAPAN PENDAHULUAN:</span>
+          <span class="text-[10px] text-amber-700">Markah Tertinggi</span>
+        </h3>
+        <ol id="leaderboardList" class="space-y-1 text-xs font-bold text-slate-700 max-h-32 overflow-y-auto pr-1">
+          <!-- Dynamic Leaderboard Items -->
+        </ol>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col gap-2">
+        <button onclick="restartQuiz()" class="w-full bg-emerald-400 hover:bg-emerald-500 text-white font-bold py-3 rounded-2xl shadow-md transition active:scale-95 border-b-4 border-emerald-600 text-lg">
+          MAIN LAGI 🔄
+        </button>
+        <button onclick="changePlayer()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-2 rounded-2xl transition text-xs">
+          Ganti Nama Murid Lain
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // 10 PRESCHOOL QUESTIONS DATA WITH LARGE VISUAL EMOJIS & VOICE READOUTS
+    const questions = [
+      {
+        id: 1,
+        question: "Apakah yang membuatkan kita demam dan sakit?",
+        options: [
+          { text: "Kuman & Virus", icon: "🦠", correct: true, speech: "Kuman dan Virus" },
+          { text: "Gula-gula", icon: "🍬", correct: false, speech: "Gula-gula" }
+        ]
+      },
+      {
+        id: 2,
+        question: "Pelindung apakah yang dimasukkan ke dalam badan untuk lawan virus?",
+        options: [
+          { text: "Suntikan Vaksin", icon: "💉", correct: true, speech: "Suntikan Vaksin" },
+          { text: "Aiskrim", icon: "🍦", correct: false, speech: "Aiskrim" }
+        ]
+      },
+      {
+        id: 3,
+        question: "Bila dah ambil vaksin, badan kita akan dapat apa?",
+        options: [
+          { text: "Perisai Kebal Sihat", icon: "🛡️", correct: true, speech: "Perisai Kebal Sihat" },
+          { text: "Rasa Mengantuk", icon: "💤", correct: false, speech: "Rasa Mengantuk" }
+        ]
+      },
+      {
+        id: 4,
+        question: "Siapakah wira yang berikan suntikan vaksin kepada kita?",
+        options: [
+          { text: "Doktor & Jururawat", icon: "🩺", correct: true, speech: "Doktor dan Jururawat" },
+          { text: "Badut", icon: "🤡", correct: false, speech: "Badut" }
+        ]
+      },
+      {
+        id: 5,
+        question: "Di manakah tempat kita pergi untuk mendapatkan suntikan vaksin?",
+        options: [
+          { text: "Klinik & Hospital", icon: "🏥", correct: true, speech: "Klinik dan Hospital" },
+          { text: "Taman Permainan", icon: "🎠", correct: false, speech: "Taman Permainan" }
+        ]
+      },
+      {
+        id: 6,
+        question: "Siapakah yang perlu ambil vaksin supaya sentiasa dilindungi?",
+        options: [
+          { text: "Kanak-kanak", icon: "👶", correct: true, speech: "Kanak-kanak" },
+          { text: "Patung Mainan", icon: "🧸", correct: false, speech: "Patung Mainan" }
+        ]
+      },
+      {
+        id: 7,
+        question: "Jika kita batuk atau selsema, apakah yang perlu dipakai?",
+        options: [
+          { text: "Pelitup Muka", icon: "😷", correct: true, speech: "Pelitup Muka" },
+          { text: "Cermin Mata Hitam", icon: "🕶️", correct: false, speech: "Cermin Mata Hitam" }
+        ]
+      },
+      {
+        id: 8,
+        question: "Lepas bermain dan sebelum makan, kita kena cuci tangan dengan apa?",
+        options: [
+          { text: "Sabun & Air", icon: "🧼", correct: true, speech: "Sabun dan Air" },
+          { text: "Jus Buah", icon: "🧃", correct: false, speech: "Jus Buah" }
+        ]
+      },
+      {
+        id: 9,
+        question: "Untuk membantu badan membina pertahanan yang kuat, kita perlu makan apa?",
+        options: [
+          { text: "Buah & Makanan Sihat", icon: "🍎", correct: true, speech: "Buah dan Makanan Sihat" },
+          { text: "Makanan Segera", icon: "🍟", correct: false, speech: "Makanan Segera" }
+        ]
+      },
+      {
+        id: 10,
+        question: "Apabila semua kanak-kanak sudah disuntik vaksin, kita akan jadi apa?",
+        options: [
+          { text: "Wira Sihat & Kuat", icon: "🌟", correct: true, speech: "Wira Sihat dan Kuat" },
+          { text: "Sentiasa Sakit", icon: "🤒", correct: false, speech: "Sentiasa Sakit" }
+        ]
+      }
+    ];
+
+    // QUIZ STATE
+    let playerName = "";
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let audioEnabled = true;
+    let isAnswering = false;
+
+    // WEB AUDIO API EFFECTS
+    let audioCtx = null;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    // SPEECH SYNTHESIS (BAHASA MELAYU AUTO READOUT)
+    function speakText(text, callback) {
+      if (!audioEnabled) {
+        if (callback) callback();
+        return;
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ms-MY';
+        utterance.rate = 0.85; // Slower pace for preschoolers
+        utterance.pitch = 1.1;  // Slightly warm tone
+        if (callback) {
+          utterance.onend = callback;
+        }
+        window.speechSynthesis.speak(utterance);
+      } else {
+        if (callback) callback();
+      }
+    }
+
+    function playSound(type) {
+      if (!audioEnabled) return;
+      initAudioContext();
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+
+      if (type === 'click') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(450, now);
+        osc.frequency.exponentialRampToValueAtTime(750, now + 0.08);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+        osc.start(now);
+        osc.stop(now + 0.08);
+      } else if (type === 'correct') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.1);
+        osc.frequency.setValueAtTime(783.99, now + 0.2);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } else if (type === 'wrong') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.linearRampToValueAtTime(140, now + 0.25);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      } else if (type === 'win') {
+        const notes = [400, 520, 650, 800, 1050];
+        notes.forEach((freq, idx) => {
+          const o = audioCtx.createOscillator();
+          const g = audioCtx.createGain();
+          o.connect(g);
+          g.connect(audioCtx.destination);
+          o.frequency.setValueAtTime(freq, now + idx * 0.1);
+          g.gain.setValueAtTime(0.25, now + idx * 0.1);
+          g.gain.linearRampToValueAtTime(0.01, now + idx * 0.1 + 0.2);
+          o.start(now + idx * 0.1);
+          o.stop(now + idx * 0.1 + 0.2);
+        });
+      }
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const icon = document.getElementById("audioIcon");
+      if (audioEnabled) {
+        icon.className = "fa-solid fa-volume-high";
+      } else {
+        icon.className = "fa-solid fa-volume-xmark text-rose-500";
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      }
+    }
+
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // GAME CONTROLLER
+    function startQuiz() {
+      const input = document.getElementById("playerNameInput");
+      const name = input.value.trim();
+      if (!name) return;
+
+      playerName = name.toUpperCase();
+      document.getElementById("displayName").innerText = playerName;
+      playSound('click');
+
+      document.getElementById("screenName").classList.add("hidden");
+      document.getElementById("screenQuiz").classList.remove("hidden");
+
+      currentQuestionIndex = 0;
+      score = 0;
+      document.getElementById("scoreText").innerText = `0 / ${questions.length}`;
+
+      loadQuestion();
+    }
+
+    function loadQuestion() {
+      isAnswering = false;
+      const q = questions[currentQuestionIndex];
+
+      document.getElementById("questionNumBadge").innerText = `SOALAN ${currentQuestionIndex + 1} / ${questions.length}`;
+      document.getElementById("questionText").innerText = q.question;
+
+      const optionsContainer = document.getElementById("optionsContainer");
+      optionsContainer.innerHTML = "";
+
+      // Randomize position of correct option each time
+      const shuffledOptions = shuffle(q.options);
+
+      shuffledOptions.forEach(opt => {
+        const btn = document.createElement("div");
+        btn.className = "card-option bg-sky-50 border-4 border-sky-200 hover:border-amber-400 hover:bg-amber-50 rounded-2xl p-3 sm:p-4 shadow-md cursor-pointer flex flex-col items-center justify-center text-center active:scale-95 relative";
+        
+        btn.innerHTML = `
+          <div class="text-6xl sm:text-7xl mb-2 filter drop-shadow animate-bounce">${opt.icon}</div>
+          <div class="font-extrabold text-slate-800 text-lg sm:text-xl uppercase">${opt.text}</div>
+        `;
+
+        btn.onclick = () => handleOptionSelect(btn, opt);
+        optionsContainer.appendChild(btn);
+      });
+
+      // Auto readout question on load
+      speakCurrentQuestion();
+    }
+
+    function speakCurrentQuestion() {
+      const q = questions[currentQuestionIndex];
+      const optTexts = q.options.map(o => o.speech).join(" atau ");
+      const fullText = `${q.question} Adakah ${optTexts}?`;
+      speakText(fullText);
+    }
+
+    function handleOptionSelect(selectedBtn, option) {
+      if (isAnswering) return;
+      isAnswering = true;
+
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+
+      if (option.correct) {
+        // CORRECT ANSWER
+        playSound('correct');
+        selectedBtn.classList.remove("bg-sky-50", "border-sky-200");
+        selectedBtn.classList.add("bg-emerald-100", "border-emerald-500", "scale-105");
+
+        try {
+          confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.7 }
+          });
+        } catch (e) {}
+
+        score++;
+        document.getElementById("scoreText").innerText = `${score} / ${questions.length}`;
+        speakText("Betul! Syabas!");
+
+      } else {
+        // WRONG ANSWER
+        playSound('wrong');
+        selectedBtn.classList.remove("bg-sky-50", "border-sky-200");
+        selectedBtn.classList.add("bg-rose-100", "border-rose-400", "shake-error");
+
+        // Highlight correct option
+        document.querySelectorAll("#optionsContainer .card-option").forEach(el => {
+          if (el.innerText.includes(questions[currentQuestionIndex].options.find(o => o.correct).text)) {
+            el.classList.add("bg-emerald-100", "border-emerald-500");
+          }
+        });
+
+        speakText("Cuba lagi!");
+      }
+
+      // Move to next question after short delay
+      setTimeout(() => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length) {
+          loadQuestion();
+        } else {
+          finishQuiz();
+        }
+      }, 1600);
+    }
+
+    function finishQuiz() {
+      playSound('win');
+      speakText(`Tahniah ${playerName}! Markah adik ialah ${score} daripada 10!`);
+
+      try {
+        confetti({
+          particleCount: 120,
+          spread: 90,
+          origin: { y: 0.5 }
+        });
+      } catch (e) {}
+
+      saveLeaderboard(playerName, score);
+
+      document.getElementById("screenQuiz").classList.add("hidden");
+      document.getElementById("screenResult").classList.remove("hidden");
+
+      document.getElementById("finalScore").innerText = `${score} / ${questions.length}`;
+      
+      const statusBadge = document.getElementById("statusBadge");
+      if (score >= 8) {
+        statusBadge.innerText = "Wira Kebal 🛡️";
+      } else if (score >= 5) {
+        statusBadge.innerText = "Wira Sihat 🌟";
+      } else {
+        statusBadge.innerText = "Teruskan Belajar 💪";
+      }
+
+      renderLeaderboard();
+    }
+
+    function saveLeaderboard(name, sc) {
+      let lb = JSON.parse(localStorage.getItem("wira_vaksin_quiz_lb") || "[]");
+      lb.push({ name: name, score: sc, date: new Date().toLocaleDateString("ms-MY") });
+      lb.sort((a, b) => b.score - a.score);
+      localStorage.setItem("wira_vaksin_quiz_lb", JSON.stringify(lb.slice(0, 5)));
+    }
+
+    function renderLeaderboard() {
+      const lbList = document.getElementById("leaderboardList");
+      lbList.innerHTML = "";
+      let lb = JSON.parse(localStorage.getItem("wira_vaksin_quiz_lb") || "[]");
+
+      if (lb.length === 0) {
+        lbList.innerHTML = "<li class='text-slate-400'>Tiada rekod lagi.</li>";
+        return;
+      }
+
+      lb.forEach((entry, idx) => {
+        const li = document.createElement("li");
+        li.className = "flex justify-between items-center py-1 border-b border-amber-200/60 last:border-0";
+        li.innerHTML = `
+          <span>${idx + 1}. 🦸‍♂️ ${entry.name}</span>
+          <span class="text-emerald-700">${entry.score} / 10 Mata</span>
+        `;
+        lbList.appendChild(li);
+      });
+    }
+
+    function restartQuiz() {
+      playSound('click');
+      document.getElementById("screenResult").classList.add("hidden");
+      document.getElementById("screenQuiz").classList.remove("hidden");
+
+      currentQuestionIndex = 0;
+      score = 0;
+      document.getElementById("scoreText").innerText = `0 / ${questions.length}`;
+
+      loadQuestion();
+    }
+
+    function changePlayer() {
+      playSound('click');
+      document.getElementById("screenResult").classList.add("hidden");
+      document.getElementById("screenName").classList.remove("hidden");
+      document.getElementById("playerNameInput").value = "";
+    }
+  </script>
+</body>
+</html>
